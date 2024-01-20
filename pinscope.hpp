@@ -1,5 +1,6 @@
 #pragma once
 
+#include "plot_area.hpp"
 #include "value.hpp"
 #include "window.hpp"
 #include <array>
@@ -30,6 +31,7 @@ private:
   std::array<bool, pin_cnt> pin_enable_;
   int time_span_;
 
+  PlotArea plot_;
   std::array<Gtk::CheckButton, pin_cnt> pin_cbox_;
   Gtk::Label time_span_label_;
   Gtk::SpinButton time_span_sb_;

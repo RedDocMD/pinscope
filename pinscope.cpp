@@ -5,7 +5,7 @@
 
 namespace pinscope {
 
-Pinscope::Pinscope() {
+Pinscope::Pinscope() : plot_(data_.data(), pin_enable_.data(), pin_cnt) {
   constexpr int default_width = 500;
   constexpr int default_height = 500;
 
@@ -18,6 +18,7 @@ Pinscope::Pinscope() {
     pin_cbox_[i].set_label(ss.str());
     pin_cbox_[i].signal_toggled().connect(
         sigc::bind(sigc::mem_fun(*this, &Pinscope::on_pin_cbox_toggled), i));
+    pin_enable_[i] = false;
   }
 
   for (int i = 0; i < pin_cnt / pin_per_row; i++) {
@@ -49,6 +50,7 @@ Pinscope::Pinscope() {
   time_span_box_.set_margin(10);
 
   main_box_.set_orientation(Gtk::Orientation::VERTICAL);
+  main_box_.append(plot_);
   main_box_.append(time_span_box_);
   main_box_.append(pin_grid_);
 
@@ -64,6 +66,7 @@ Pinscope::Pinscope() {
 
 void Pinscope::on_pin_cbox_toggled(int idx) {
   pin_enable_[idx] = pin_cbox_[idx].get_active();
+  plot_.queue_draw();
 }
 
 void Pinscope::on_time_span_sb_set() {
@@ -72,6 +75,7 @@ void Pinscope::on_time_span_sb_set() {
   for (auto &pin_data : data_) {
     pin_data.resize(win_size);
   }
+  plot_.queue_draw();
 }
 
 bool Pinscope::on_timer_step() {
@@ -79,6 +83,7 @@ bool Pinscope::on_timer_step() {
     auto pin_level = level_[i].get();
     data_[i].push_back(pin_level);
   }
+  plot_.queue_draw();
   return true;
 }
 

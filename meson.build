@@ -14,6 +14,7 @@ cpp_sources = [
   'pinscope.cpp',
   'window.cpp',
   'value.cpp',
+  'plot_area.cpp',
 ]
 
 executable(program_name,
