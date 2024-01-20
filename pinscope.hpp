@@ -11,6 +11,8 @@
 #include <gtkmm/label.h>
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/window.h>
+#include <optional>
+#include <thread>
 
 namespace pinscope {
 
@@ -38,10 +40,14 @@ private:
   Gtk::Box time_span_box_;
   Gtk::Grid pin_grid_;
   Gtk::Box main_box_;
+  std::thread sock_thread_;
 
   void on_pin_cbox_toggled(int idx);
   void on_time_span_sb_set();
   bool on_timer_step();
+
+  void update_levels();
+  std::optional<int> map_portpin_to_pin(int port, int pin);
 };
 
 } // namespace pinscope

@@ -1,7 +1,11 @@
 #include "pinscope.hpp"
+#include <arpa/inet.h>
 #include <gtkmm.h>
 #include <gtkmm/adjustment.h>
+#include <iostream>
 #include <sstream>
+#include <stdexcept>
+#include <unistd.h>
 
 namespace pinscope {
 
@@ -60,6 +64,9 @@ Pinscope::Pinscope() : plot_(data_.data(), pin_enable_.data(), pin_cnt) {
     pin_data.resize(time_span_ / time_resolution);
   }
 
+  std::thread th(&Pinscope::update_levels, this);
+  sock_thread_ = std::move(th);
+
   Glib::signal_timeout().connect(sigc::mem_fun(*this, &Pinscope::on_timer_step),
                                  time_resolution);
 }
@@ -85,6 +92,81 @@ bool Pinscope::on_timer_step() {
   }
   plot_.queue_draw();
   return true;
+}
+
+std::optional<int> Pinscope::map_portpin_to_pin(int port, int pin) {
+  struct {
+    int port;
+    int pin;
+  } pin_cfg[pin_cnt] = {
+      {.port = 3, .pin = 1},  {.port = 3, .pin = 2},  {.port = 1, .pin = 5},
+      {.port = 1, .pin = 4},  {.port = 1, .pin = 3},  {.port = 1, .pin = 2},
+      {.port = 1, .pin = 6},  {.port = 1, .pin = 7},  {.port = 3, .pin = 4},
+      {.port = 3, .pin = 3},  {.port = 1, .pin = 12}, {.port = 1, .pin = 9},
+      {.port = 1, .pin = 10}, {.port = 1, .pin = 11}, {.port = 0, .pin = 14},
+      {.port = 0, .pin = 0},  {.port = 0, .pin = 1},  {.port = 0, .pin = 2},
+      {.port = 1, .pin = 1},  {.port = 1, .pin = 0},  {.port = 5, .pin = 0},
+      {.port = 0, .pin = 12}, {.port = 0, .pin = 13}, {.port = 5, .pin = 1},
+      {.port = 5, .pin = 2},  {.port = 1, .pin = 8},  {.port = 3, .pin = 0},
+  };
+
+  for (int i = 0; i < pin_cnt; i++) {
+    if (pin_cfg[i].pin == pin && pin_cfg[i].port == port) {
+      return i;
+    }
+  }
+  return {};
+}
+
+extern "C" struct pin_value {
+  uint32_t port;
+  uint32_t pin;
+  float value;
+};
+
+struct MsgException : std::exception {
+  std::string msg;
+
+  MsgException(const std::string &msg) : msg(msg) {}
+
+  const char *what() const noexcept override { return msg.c_str(); }
+};
+
+void Pinscope::update_levels() {
+  int sockfd;
+  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    throw MsgException("Failed to create socket");
+  }
+
+  sockaddr_in addr;
+  constexpr uint16_t port = 3500;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  inet_pton(AF_INET, "localhost", &addr.sin_addr);
+  addr.sin_port = htons(port);
+
+  if (connect(sockfd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) <
+      0) {
+    throw MsgException("Failed to connect to server");
+  }
+
+  pin_value pv;
+  while (true) {
+    auto cnt = read(sockfd, &pv, sizeof(pv));
+    if (cnt < 0) {
+      throw MsgException("Read error");
+    }
+    if (static_cast<size_t>(cnt) < sizeof(pv)) {
+      std::cerr << "Read less bytes than expected\n";
+      continue;
+    }
+    auto actual_pin = map_portpin_to_pin(pv.port, pv.pin);
+    if (!actual_pin) {
+      std::cerr << "Received invalid pin\n";
+      continue;
+    }
+    level_[*actual_pin].set(pv.value);
+  }
 }
 
 } // namespace pinscope
