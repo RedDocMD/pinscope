@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include <iostream>
 
 namespace pinscope {
 
@@ -19,6 +20,7 @@ void Window::resize(size_t new_win_cap) {
     new_win.push_front(*it);
   }
   win_ = std::move(new_win);
+  win_cap_ = new_win_cap;
 }
 
 } // namespace pinscope

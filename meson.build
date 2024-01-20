@@ -13,6 +13,7 @@ cpp_sources = [
   'main.cpp',
   'pinscope.cpp',
   'window.cpp',
+  'value.cpp',
 ]
 
 executable(program_name,

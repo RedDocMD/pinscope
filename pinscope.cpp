@@ -1,4 +1,5 @@
 #include "pinscope.hpp"
+#include <gtkmm.h>
 #include <gtkmm/adjustment.h>
 #include <sstream>
 
@@ -52,6 +53,13 @@ Pinscope::Pinscope() {
   main_box_.append(pin_grid_);
 
   set_child(main_box_);
+
+  for (auto &pin_data : data_) {
+    pin_data.resize(time_span_ / time_resolution);
+  }
+
+  Glib::signal_timeout().connect(sigc::mem_fun(*this, &Pinscope::on_timer_step),
+                                 time_resolution);
 }
 
 void Pinscope::on_pin_cbox_toggled(int idx) {
@@ -64,6 +72,14 @@ void Pinscope::on_time_span_sb_set() {
   for (auto &pin_data : data_) {
     pin_data.resize(win_size);
   }
+}
+
+bool Pinscope::on_timer_step() {
+  for (int i = 0; i < pin_cnt; i++) {
+    auto pin_level = level_[i].get();
+    data_[i].push_back(pin_level);
+  }
+  return true;
 }
 
 } // namespace pinscope
