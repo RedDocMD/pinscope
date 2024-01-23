@@ -13,7 +13,6 @@ cpp_sources = [
   'main.cpp',
   'pinscope.cpp',
   'window.cpp',
-  'value.cpp',
   'plot_area.cpp',
 ]
 

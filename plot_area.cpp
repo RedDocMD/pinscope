@@ -44,7 +44,7 @@ void PlotArea::draw_single_pin(const pinscope::Window &data,
   auto it = data.begin();
   int idx = 0;
   int last_x;
-  for (;; ++it, ++idx) {
+  for (; it != data.end(); ++it, ++idx) {
     auto y = map_y_value(*it, height);
     if (!y)
       continue;

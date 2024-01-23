@@ -64,11 +64,21 @@ Pinscope::Pinscope() : plot_(data_.data(), pin_enable_.data(), pin_cnt) {
     pin_data.resize(time_span_ / time_resolution);
   }
 
+  quit_sock_.set(false);
+  signal_close_request().connect(sigc::mem_fun(*this, &Pinscope::on_quit),
+                                 true);
+
   std::thread th(&Pinscope::update_levels, this);
   sock_thread_ = std::move(th);
 
   Glib::signal_timeout().connect(sigc::mem_fun(*this, &Pinscope::on_timer_step),
                                  time_resolution);
+}
+
+bool Pinscope::on_quit() {
+  quit_sock_.set(true);
+  sock_thread_.join();
+  return on_close_request();
 }
 
 void Pinscope::on_pin_cbox_toggled(int idx) {
@@ -151,12 +161,29 @@ void Pinscope::update_levels() {
       break;
     }
     sleep(1);
+    if (quit_sock_.get())
+      return;
+  }
+
+  if (quit_sock_.get())
+    return;
+
+  timeval tv;
+  tv.tv_sec = 0;
+  tv.tv_usec = 50000;
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0) {
+    throw MsgException("Failed to set socket read timeout");
   }
 
   pin_value pv;
   while (true) {
     auto cnt = read(sockfd, &pv, sizeof(pv));
+    if (quit_sock_.get())
+      return;
     if (cnt < 0) {
+      if (errno == EWOULDBLOCK)
+        continue;
       throw MsgException("Read error");
     }
     if (static_cast<size_t>(cnt) < sizeof(pv)) {
