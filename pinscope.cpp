@@ -1,7 +1,5 @@
 #include "pinscope.hpp"
 #include <arpa/inet.h>
-#include <gtkmm.h>
-#include <gtkmm/adjustment.h>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -52,6 +50,8 @@ Pinscope::Pinscope() : plot_(data_.data(), pin_enable_.data(), pin_cnt) {
   time_span_box_.append(time_span_sb_);
   time_span_box_.set_spacing(10);
   time_span_box_.set_margin(10);
+
+  plot_.set_margin(10);
 
   main_box_.set_orientation(Gtk::Orientation::VERTICAL);
   main_box_.append(plot_);

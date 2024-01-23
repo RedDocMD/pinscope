@@ -4,13 +4,7 @@
 #include "value.hpp"
 #include "window.hpp"
 #include <array>
-#include <gtkmm/box.h>
-#include <gtkmm/button.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/grid.h>
-#include <gtkmm/label.h>
-#include <gtkmm/spinbutton.h>
-#include <gtkmm/window.h>
+#include <gtkmm.h>
 #include <optional>
 #include <thread>
 
@@ -32,6 +26,7 @@ private:
   std::array<pinscope::Value, pin_cnt> level_;
   std::array<bool, pin_cnt> pin_enable_;
   int time_span_;
+  std::thread sock_thread_;
 
   PlotArea plot_;
   std::array<Gtk::CheckButton, pin_cnt> pin_cbox_;
@@ -40,7 +35,6 @@ private:
   Gtk::Box time_span_box_;
   Gtk::Grid pin_grid_;
   Gtk::Box main_box_;
-  std::thread sock_thread_;
 
   void on_pin_cbox_toggled(int idx);
   void on_time_span_sb_set();

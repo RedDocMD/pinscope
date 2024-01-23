@@ -12,6 +12,14 @@ PlotArea::PlotArea(const pinscope::Window *data, const bool *enabled,
 
 void PlotArea::on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width,
                        int height) const {
+  cr->set_source_rgb(0, 0, 0);
+  cr->move_to(0, 0);
+  cr->line_to(width, 0);
+  cr->line_to(width, height);
+  cr->line_to(0, height);
+  cr->line_to(0, 0);
+  cr->stroke();
+
   size_t sel_col_idx = 0;
   for (size_t i = 0; i < pin_cnt_; i++) {
     if (enabled_[i]) {
