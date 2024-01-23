@@ -145,9 +145,12 @@ void Pinscope::update_levels() {
   inet_pton(AF_INET, "localhost", &addr.sin_addr);
   addr.sin_port = htons(port);
 
-  if (connect(sockfd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) <
-      0) {
-    throw MsgException("Failed to connect to server");
+  while (true) {
+    if (connect(sockfd, reinterpret_cast<const sockaddr *>(&addr),
+                sizeof(addr)) >= 0) {
+      break;
+    }
+    sleep(1);
   }
 
   pin_value pv;
