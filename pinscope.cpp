@@ -7,7 +7,8 @@
 
 namespace pinscope {
 
-Pinscope::Pinscope() : plot_(data_.data(), pin_enable_.data(), pin_cnt) {
+Pinscope::Pinscope()
+    : plot_(data_.data(), pin_enable_.data(), pin_cnt, &time_span_) {
   constexpr int default_width = 500;
   constexpr int default_height = 500;
 
